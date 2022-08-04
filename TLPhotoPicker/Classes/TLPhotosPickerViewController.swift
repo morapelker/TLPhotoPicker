@@ -131,6 +131,8 @@ public struct Platform {
 
 
 open class TLPhotosPickerViewController: UIViewController {
+    @IBOutlet weak var lblGoToSettings: UILabel!
+    @IBOutlet weak var btnAddPhotos: UIView!
     @IBOutlet open var navigationBar: UINavigationBar!
     @IBOutlet open var titleView: UIView!
     @IBOutlet open var titleLabel: UILabel!
@@ -150,6 +152,7 @@ open class TLPhotosPickerViewController: UIViewController {
     @IBOutlet open var emptyMessageLabel: UILabel!
     @IBOutlet open var photosButton: UIBarButtonItem!
     
+    @IBOutlet weak var viewLimitedPermissions: UIView!
     public weak var delegate: TLPhotosPickerViewControllerDelegate? = nil
     public weak var logDelegate: TLPhotosPickerLogDelegate? = nil
     open var selectedAssets = [TLPHAsset]()
@@ -268,6 +271,7 @@ open class TLPhotosPickerViewController: UIViewController {
         self.photoLibrary.limitMode = limitMode
         self.photoLibrary.delegate = self
         self.photoLibrary.fetchCollection(configure: self.configure)
+        self.viewLimitedPermissions.isHidden = !limitMode
     }
     
     private func processAuthorization(status: PHAuthorizationStatus) {
@@ -403,6 +407,18 @@ extension TLPhotosPickerViewController {
         self.cameraImage = centerAtRect(image: self.configure.cameraIcon, rect: CGRect(x: 0, y: 0, width: width, height: width), bgColor: self.configure.cameraBgColor)
     }
     
+    @objc private func openSettings() {
+        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(settingsUrl)
+        }
+    }
+    
+    @objc private func addPhotos() {
+        if #available(iOS 14.0, *) {
+            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: self)
+        }
+    }
+    
     @objc open func makeUI() {
         registerNib(nibName: "TLPhotoCollectionViewCell", bundle: TLBundle.bundle())
         if let nibSet = self.configure.nibSet {
@@ -440,15 +456,38 @@ extension TLPhotosPickerViewController {
         }
         self.customDataSouces?.registerSupplementView(collectionView: self.collectionView)
         self.navigationBar.delegate = self
+        
+        let text = "Add more photos or visit Settings\nto give full access"
+        let textRange = text.range(of: "Settings")
+        let attributedText = NSMutableAttributedString(string: text)
+        if let textRange = textRange {
+            attributedText.addAttribute(
+                .underlineStyle,
+                value: NSUnderlineStyle.single.rawValue,
+                range: NSRange(location: textRange.lowerBound.utf16Offset(in: text), length: textRange.upperBound.utf16Offset(in: text) - textRange.lowerBound.utf16Offset(in: text))
+            )
+            attributedText.addAttribute(
+                .font,
+                value: UIFont.boldSystemFont(ofSize: 14),
+                range: NSRange(location: textRange.lowerBound.utf16Offset(in: text), length: textRange.upperBound.utf16Offset(in: text) - textRange.lowerBound.utf16Offset(in: text))
+            )
+        }
+        self.btnAddPhotos.layer.cornerRadius = 10
+        btnAddPhotos.isUserInteractionEnabled = true
+        btnAddPhotos.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(addPhotos)))
+        lblGoToSettings.isUserInteractionEnabled = true
+        lblGoToSettings.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openSettings)))
+        lblGoToSettings.attributedText = attributedText
+        
         updateUserInterfaceStyle()
     }
     
     private func updatePresentLimitedLibraryButton() {
-        if #available(iOS 14.0, *), self.photoLibrary.limitMode && self.configure.preventAutomaticLimitedAccessAlert {
-            self.customNavItem.rightBarButtonItems = [self.doneButton, self.photosButton]
-        } else {
+//        if #available(iOS 14.0, *), self.photoLibrary.limitMode && self.configure.preventAutomaticLimitedAccessAlert {
+//            self.customNavItem.rightBarButtonItems = [self.doneButton, self.photosButton]
+//        } else {
             self.customNavItem.rightBarButtonItems = [self.doneButton]
-        }
+//        }
     }
     
     private func updateTitle() {
