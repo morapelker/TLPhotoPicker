@@ -467,8 +467,8 @@ extension TLPhotosPickerViewController {
                 range: NSRange(location: textRange.lowerBound.utf16Offset(in: text), length: textRange.upperBound.utf16Offset(in: text) - textRange.lowerBound.utf16Offset(in: text))
             )
             attributedText.addAttribute(
-                .font,
-                value: UIFont.boldSystemFont(ofSize: 14),
+                .foregroundColor,
+                value: UIColor.init(red: 16/255, green: 25/255, blue: 236/255, alpha: 1.0),
                 range: NSRange(location: textRange.lowerBound.utf16Offset(in: text), length: textRange.upperBound.utf16Offset(in: text) - textRange.lowerBound.utf16Offset(in: text))
             )
         }
